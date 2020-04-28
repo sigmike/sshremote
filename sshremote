@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+remote = ARGV.first || "prod"
+
+if remote =~ /@/
+  user, remote = remote.split("@", 2)
+end
+
+remotes = %x(git remote -v)
+remotes.strip.split(/\r?\n/).map(&:split).each do |name, url,|
+  if name == remote
+    server, path = url.split(':')
+    if user
+      server = "#{user}@#{server.sub(/.*@/, '')}"
+      path = "."
+    end
+    exec('ssh', server, '-t', "cd #{path} && exec $SHELL --login")
+    raise "exec failed"
+  end
+end
